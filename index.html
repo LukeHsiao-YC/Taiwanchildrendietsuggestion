@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台灣兒童每日飲食建議量查詢</title>
+    <!-- 引入 Tailwind CSS 以進行快速、美觀的排版 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 隱藏捲軸但保留滾動功能 (針對部分美化需求) */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex items-center justify-center p-4 font-sans">
+
+    <!-- 主卡片容器 -->
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-100">
+        
+        <!-- 頂部標題區塊 -->
+        <div class="bg-blue-600 p-6 text-white text-center">
+            <h1 class="text-2xl font-bold mb-2">🍎 台灣兒童每日飲食建議量查詢</h1>
+            <p class="text-blue-100 text-sm mb-1">告別雲朵人 兒童減重一起來 | 蕭宇超醫師整理製作</p>
+            <p class="text-blue-200 text-xs">資料來源：台灣國民健康署</p>
+        </div>
+
+        <!-- 表單區塊 -->
+        <div class="p-6 space-y-5">
+            
+            <!-- 年齡選擇 -->
+            <div>
+                <label for="age" class="block text-sm font-semibold text-slate-700 mb-2">請選擇年齡範圍：</label>
+                <select id="age" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 outline-none transition-colors">
+                    <option value="1-3">1-3 歲</option>
+                    <option value="4-6">4-6 歲</option>
+                    <option value="7-8">7-8 歲</option>
+                    <option value="9-12">9-12 歲</option>
+                    <option value="13-15">13-15 歲</option>
+                    <option value="16-18">16-18 歲</option>
+                </select>
+            </div>
+
+            <!-- 性別選擇 -->
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-2">請選擇性別：</label>
+                <div class="flex space-x-4">
+                    <label class="flex items-center space-x-2 cursor-pointer bg-slate-50 px-4 py-2 border border-slate-300 rounded-lg flex-1 hover:bg-blue-50 transition-colors">
+                        <input type="radio" name="gender" value="男" checked class="w-4 h-4 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                        <span class="text-slate-700 font-medium">👦 男生</span>
+                    </label>
+                    <label class="flex items-center space-x-2 cursor-pointer bg-slate-50 px-4 py-2 border border-slate-300 rounded-lg flex-1 hover:bg-blue-50 transition-colors">
+                        <input type="radio" name="gender" value="女" class="w-4 h-4 text-pink-500 focus:ring-pink-500 cursor-pointer">
+                        <span class="text-slate-700 font-medium">👧 女生</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 活動強度選擇 -->
+            <div>
+                <label for="activity" class="block text-sm font-semibold text-slate-700 mb-2">請選擇活動強度：</label>
+                <select id="activity" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 outline-none transition-colors">
+                    <option value="稍低">稍低 (多為靜態活動)</option>
+                    <option value="適度">適度 (有規律運動習慣)</option>
+                </select>
+            </div>
+
+            <!-- 查詢按鈕 -->
+            <button onclick="queryDiet()" class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                🔍 查詢飲食建議
+            </button>
+
+        </div>
+
+        <!-- 結果顯示區塊 (預設隱藏) -->
+        <div id="result-container" class="hidden bg-slate-50 border-t border-slate-100 p-6">
+            <h2 class="text-lg font-bold text-slate-800 mb-4 border-b pb-2 flex items-center justify-between">
+                <span>📋 每日飲食建議量</span>
+                <span id="result-calories" class="text-orange-500 font-black text-xl"></span>
+            </h2>
+            
+            <div id="error-message" class="hidden text-red-500 font-medium text-center py-4">
+                查無對應的飲食建議，請確認輸入條件是否正確。
+            </div>
+
+            <ul id="result-list" class="space-y-3">
+                <!-- Javascript 將動態填入結果清單 -->
+            </ul>
+        </div>
+    </div>
+
+    <!-- JavaScript 邏輯 -->
+    <script>
+        // 將 Python 中的字典格式轉換為 JavaScript 物件
+        const rawData = {
+            "年齡": [
+                "1-3", "1-3", "1-3", "1-3", "4-6", "4-6", "4-6", "4-6",
+                "7-8", "7-8", "7-8", "7-8", "9-12", "9-12", "9-12", "9-12",
+                "13-15", "13-15", "13-15", "13-15", "16-18", "16-18", "16-18", "16-18"
+            ],
+            "性別": ["男", "男", "女", "女", "男", "男", "女", "女", "男", "男", "女", "女", "男", "男", "女", "女", "男", "男", "女", "女", "男", "男", "女", "女"],
+            "活動強度": ["稍低", "適度", "稍低", "適度", "稍低", "適度", "稍低", "適度", "稍低", "適度", "稍低", "適度",
+                        "稍低", "適度", "稍低", "適度", "稍低", "適度", "稍低", "適度", "稍低", "適度", "稍低", "適度"],
+            "熱量 (大卡)": [1150, 1350, 1150, 1350, 1550, 1800, 1400, 1650, 1800, 2100, 1650, 1900, 2050,
+                          2350, 1950, 2250, 2400, 2800, 2050, 2350, 2500, 2900, 1900, 2250],
+            "全榖雜糧類 (碗)": [1.5, 2, 1.5, 2, 2.5, 3, 2, 3, 3, 3.5, 2.5, 3, 3, 4, 3, 3.5, 4, 4.5, 3, 4, 4, 4.5, 3, 3.5],
+            "豆魚蛋肉類 (份)": [2, 3, 2, 3, 3, 4, 3, 3, 5, 6, 4, 5.5, 6, 6, 6, 6, 6, 8, 6, 6, 7, 9, 5.5, 6],
+            "乳品類 (杯)": [2, 2, 2, 2, 2, 2, 2, 2, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 2, 1.5, 1.5, 1.5, 2, 1.5, 1.5],
+            "蔬菜類 (份)": [2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 3, 3, 4, 4, 3, 4, 5, 5, 4, 4, 5, 5, 3, 4],
+            "水果類 (份)": [2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 3, 3, 4, 3, 3.5, 4, 4, 3, 4, 4, 4, 3, 3.5],
+            "油脂與堅果種子類 (份)": [4, 4, 4, 4, 4, 5, 4, 4, 5, 6, 5, 5, 6, 6, 5, 6, 7, 8, 6, 6, 7, 8, 5, 6]
+        };
+
+        // 模擬 Pandas DataFrame，將直欄資料轉為橫列陣列以便於搜尋
+        const dietDatabase = [];
+        const rowCount = rawData["年齡"].length;
+        
+        for (let i = 0; i < rowCount; i++) {
+            let row = {};
+            for (const key in rawData) {
+                row[key] = rawData[key][i];
+            }
+            dietDatabase.push(row);
+        }
+
+        // 搭配一些小圖示讓結果更生動
+        const icons = {
+            "全榖雜糧類 (碗)": "🍚",
+            "豆魚蛋肉類 (份)": "🥚",
+            "乳品類 (杯)": "🥛",
+            "蔬菜類 (份)": "🥬",
+            "水果類 (份)": "🍎",
+            "油脂與堅果種子類 (份)": "🥜"
+        };
+
+        function queryDiet() {
+            // 取得使用者輸入的值
+            const ageGroup = document.getElementById("age").value;
+            const gender = document.querySelector('input[name="gender"]:checked').value;
+            const activityLevel = document.getElementById("activity").value;
+
+            // 在資料庫中尋找相符的紀錄 (模擬 Pandas 條件過濾)
+            const result = dietDatabase.find(
+                item => item["年齡"] === ageGroup && 
+                        item["性別"] === gender && 
+                        item["活動強度"] === activityLevel
+            );
+
+            // 準備更新介面
+            const container = document.getElementById("result-container");
+            const errorMessage = document.getElementById("error-message");
+            const resultList = document.getElementById("result-list");
+            const caloriesDisplay = document.getElementById("result-calories");
+
+            container.classList.remove("hidden"); // 顯示結果區塊
+            resultList.innerHTML = ""; // 清空之前的結果
+
+            if (!result) {
+                // 找不到資料
+                errorMessage.classList.remove("hidden");
+                resultList.classList.add("hidden");
+                caloriesDisplay.textContent = "";
+            } else {
+                // 找到資料
+                errorMessage.classList.add("hidden");
+                resultList.classList.remove("hidden");
+                
+                // 獨立顯示熱量
+                caloriesDisplay.textContent = `${result["熱量 (大卡)"]} 大卡`;
+
+                // 產生清單項目 (排除前四個用來搜尋/總結的屬性)
+                const skipKeys = ["年齡", "性別", "活動強度", "熱量 (大卡)"];
+                
+                for (const [key, value] of Object.entries(result)) {
+                    if (!skipKeys.includes(key)) {
+                        const icon = icons[key] || "✨";
+                        const li = document.createElement("li");
+                        li.className = "flex justify-between items-center bg-white p-3 rounded border border-slate-100 shadow-sm";
+                        li.innerHTML = `
+                            <span class="text-slate-600 font-medium flex items-center gap-2">
+                                <span class="text-xl">${icon}</span> ${key}
+                            </span>
+                            <span class="font-bold text-blue-600 text-lg">${value}</span>
+                        `;
+                        resultList.appendChild(li);
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
