@@ -128,13 +128,13 @@
         <!-- 頂部標題區塊 -->
         <div class="bg-indigo-600 p-6 text-white text-center">
             <h2 class="text-2xl font-bold mb-2">⚡ 兒童/青少年熱量需求 (EER) 計算機</h2>
-            <p class="text-indigo-200 text-xs">根據美國國家醫學院 (IOM) DRI 指引開發</p>
+            <p class="text-indigo-200 text-xs">依據 IOM 2005 臨床指引 (含過重/肥胖專用公式)</p>
         </div>
 
         <div class="p-6 space-y-5">
             <form id="eerForm" class="space-y-5" onsubmit="event.preventDefault(); calculateEER();">
                 
-                <!-- 性別選擇 (避免與上方表單衝突，改名為 eer_gender) -->
+                <!-- 性別選擇 -->
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-2">性別</label>
                     <div class="flex gap-4">
@@ -165,8 +165,14 @@
                     </div>
                     <div class="col-span-2">
                         <label for="eer_height" class="block text-sm font-semibold text-slate-700 mb-1">身高 (公分)</label>
-                        <input type="number" id="eer_height" min="50" max="220" step="0.1" placeholder="cm (系統會自動轉為公尺)" class="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" required>
+                        <input type="number" id="eer_height" min="50" max="220" step="0.1" placeholder="cm" class="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" required>
                     </div>
+                </div>
+
+                <!-- 提示說明：現在系統會自動計算 BMI 並決定公式 -->
+                <div class="bg-indigo-50 border border-indigo-100 rounded-lg p-3 text-sm text-indigo-700 flex items-start gap-2">
+                    <span class="text-lg">💡</span>
+                    <p>系統將依據<span class="font-bold">台灣國民健康署</span>標準自動計算 BMI。若達過重或肥胖標準，將自動套用專屬維持公式避免熱量高估。</p>
                 </div>
 
                 <!-- 活動量選擇 -->
@@ -192,11 +198,27 @@
 
             <!-- 結果顯示區 -->
             <div id="resultCard" class="hidden mt-8 p-6 bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl border border-indigo-100 shadow-sm transition-all">
+                
+                <!-- 新增：BMI 顯示區塊 -->
+                <div class="mb-5 p-4 bg-white rounded-lg border border-indigo-100 flex justify-between items-center shadow-sm">
+                    <div class="text-sm font-semibold text-slate-500">BMI 數值與體位判定</div>
+                    <div class="flex items-center gap-3">
+                        <span id="bmiValue" class="text-2xl font-bold text-slate-700"></span>
+                        <span id="bmiStatus" class="px-3 py-1 rounded-full text-sm font-bold shadow-sm"></span>
+                    </div>
+                </div>
+
                 <h3 class="text-sm font-bold text-slate-600 mb-1 text-center">估計能量需求 (EER)</h3>
                 <div class="flex justify-center items-end gap-2 text-indigo-900">
                     <span id="resultValue" class="text-4xl font-extrabold leading-none"></span>
                     <span class="text-lg font-semibold mb-1">kcal / day</span>
                 </div>
+                
+                <!-- 臨床減重提醒 (針對肥胖兒童) -->
+                <div id="obesityWarning" class="hidden mt-3 text-center bg-red-100 text-red-700 text-xs font-bold p-2 rounded">
+                    ⚠️ 此為「維持目前體重」之熱量。<br>若需減重，應由醫師評估後製造適當熱量赤字。
+                </div>
+
                 <div class="mt-4 text-xs text-slate-500 border-t border-indigo-200 pt-3">
                     <strong>系統判定摘要：</strong><br>
                     <span id="formulaDetail"></span>
@@ -298,10 +320,50 @@
         }
 
         /* ========================================================= */
-        /* 工具 2：EER 熱量計算機邏輯                                */
+        /* 工具 2：EER 熱量計算機邏輯 (加入肥胖兒童修正)               */
         /* ========================================================= */
+        
+        // 新增：國健署兒童與青少年 BMI 標準 (男/女 3-18歲)
+        const bmiStandards = {
+            boy: {
+                3: { under: 14.1, over: 17.2, obese: 18.0 },
+                4: { under: 13.9, over: 17.1, obese: 18.1 },
+                5: { under: 13.8, over: 17.1, obese: 18.3 },
+                6: { under: 13.8, over: 17.2, obese: 18.7 },
+                7: { under: 13.9, over: 17.5, obese: 19.3 },
+                8: { under: 14.0, over: 17.9, obese: 20.0 },
+                9: { under: 14.2, over: 18.4, obese: 20.8 },
+                10: { under: 14.5, over: 19.0, obese: 21.6 },
+                11: { under: 14.8, over: 19.6, obese: 22.5 },
+                12: { under: 15.2, over: 20.3, obese: 23.4 },
+                13: { under: 15.7, over: 21.0, obese: 24.3 },
+                14: { under: 16.3, over: 21.8, obese: 25.1 },
+                15: { under: 16.9, over: 22.5, obese: 25.8 },
+                16: { under: 17.4, over: 23.1, obese: 26.4 },
+                17: { under: 17.9, over: 23.6, obese: 26.9 },
+                18: { under: 18.3, over: 24.0, obese: 27.3 }
+            },
+            girl: {
+                3: { under: 13.7, over: 17.1, obese: 18.0 },
+                4: { under: 13.6, over: 16.9, obese: 18.0 },
+                5: { under: 13.5, over: 16.9, obese: 18.1 },
+                6: { under: 13.5, over: 17.1, obese: 18.5 },
+                7: { under: 13.6, over: 17.3, obese: 19.0 },
+                8: { under: 13.8, over: 17.8, obese: 19.7 },
+                9: { under: 14.0, over: 18.4, obese: 20.4 },
+                10: { under: 14.3, over: 19.0, obese: 21.1 },
+                11: { under: 14.7, over: 19.7, obese: 21.9 },
+                12: { under: 15.2, over: 20.4, obese: 22.7 },
+                13: { under: 15.8, over: 21.2, obese: 23.5 },
+                14: { under: 16.4, over: 22.0, obese: 24.3 },
+                15: { under: 17.0, over: 22.7, obese: 25.1 },
+                16: { under: 17.5, over: 23.3, obese: 25.8 },
+                17: { under: 17.9, over: 23.8, obese: 26.5 },
+                18: { under: 18.2, over: 24.0, obese: 27.0 }
+            }
+        };
+
         function calculateEER() {
-            // 1. 取得表單數值 (使用更新後的 ID)
             const genderElement = document.querySelector('input[name="eer_gender"]:checked');
             const ageInput = document.getElementById('eer_age').value;
             const heightCmInput = document.getElementById('eer_height').value;
@@ -310,12 +372,12 @@
             
             const errorDiv = document.getElementById('errorMsg');
             const resultCard = document.getElementById('resultCard');
+            const obesityWarning = document.getElementById('obesityWarning');
 
-            // 隱藏之前的錯誤或結果
             errorDiv.classList.add('hidden');
             resultCard.classList.add('hidden');
+            obesityWarning.classList.add('hidden');
 
-            // 2. 基礎防呆驗證
             if (!genderElement || !ageInput || !heightCmInput || !weightInput || !activityInput) {
                 showError("請完整填寫所有欄位與活動強度。");
                 return;
@@ -332,55 +394,104 @@
                 return;
             }
 
-            // 3. 單位轉換 (將公分轉為公尺)
             const heightM = heightCm / 100;
+            const bmi = weight / (heightM * heightM);
+            const roundedAge = Math.floor(age);
+            const safeAge = Math.min(Math.max(roundedAge, 3), 18); // 限制查找範圍
+            const standard = bmiStandards[gender][safeAge];
 
-            // 4. 判斷生長熱量 (9歲以上為 +25，未滿9歲為 +20)
-            const growthAddition = (age >= 9) ? 25 : 20;
+            let statusText = "正常";
+            let statusColor = "bg-green-100 text-green-700";
+            let isObese = false;
+
+            // 進行體位判定
+            if (bmi < standard.under) {
+                statusText = "體重過輕";
+                statusColor = "bg-blue-100 text-blue-700";
+            } else if (bmi >= standard.obese) {
+                statusText = "肥胖";
+                statusColor = "bg-red-100 text-red-700";
+                isObese = true;
+            } else if (bmi >= standard.over) {
+                statusText = "過重";
+                statusColor = "bg-orange-100 text-orange-700";
+                isObese = true;
+            }
+
+            // 更新 UI 顯示 BMI 結果
+            document.getElementById('bmiValue').innerText = bmi.toFixed(1);
+            const bmiStatusEl = document.getElementById('bmiStatus');
+            bmiStatusEl.innerText = statusText;
+            bmiStatusEl.className = `px-3 py-1 rounded-full text-sm font-bold shadow-sm ${statusColor}`;
 
             let pa = 1.0;
             let eer = 0;
+            let formulaType = "標準健康體重公式";
+            let growthAddition = 0;
 
-            // 5. 核心公式運算 (依照 IOM 指引)
-            if (gender === 'boy') {
-                // 男孩 PA 係數判定
-                if (activity === 'sedentary') pa = 1.00;
-                else if (activity === 'low') pa = 1.13;
-                else if (activity === 'active') pa = 1.26;
-                else if (activity === 'very') pa = 1.42;
+            if (isObese) {
+                // ==========================================
+                // IOM 2005 過重/肥胖兒童專用公式 (維持體重)
+                // ==========================================
+                formulaType = "過重/肥胖專用維持公式";
+                obesityWarning.classList.remove('hidden'); // 顯示減重臨床提醒
 
-                // 男孩公式：EER = 88.5 - 61.9*age + PA * (26.7*weight + 903*heightM) + growthAddition
-                const bodyFactor = (26.7 * weight) + (903 * heightM);
-                eer = 88.5 - (61.9 * age) + (pa * bodyFactor) + growthAddition;
+                if (gender === 'boy') {
+                    // 男孩過重 PA 係數
+                    if (activity === 'sedentary') pa = 1.00;
+                    else if (activity === 'low') pa = 1.12;
+                    else if (activity === 'active') pa = 1.24;
+                    else if (activity === 'very') pa = 1.45;
 
+                    eer = -114.1 - (50.9 * age) + (pa * ((19.5 * weight) + (1161.4 * heightM)));
+                } else {
+                    // 女孩過重 PA 係數
+                    if (activity === 'sedentary') pa = 1.00;
+                    else if (activity === 'low') pa = 1.18;
+                    else if (activity === 'active') pa = 1.35;
+                    else if (activity === 'very') pa = 1.60;
+
+                    eer = 389.2 - (41.2 * age) + (pa * ((15.0 * weight) + (701.6 * heightM)));
+                }
             } else {
-                // 女孩 PA 係數判定
-                if (activity === 'sedentary') pa = 1.00;
-                else if (activity === 'low') pa = 1.16;
-                else if (activity === 'active') pa = 1.31;
-                else if (activity === 'very') pa = 1.56;
+                // ==========================================
+                // IOM 2005 標準健康體重公式 (含生長熱量)
+                // ==========================================
+                growthAddition = (age >= 9) ? 25 : 20;
 
-                // 女孩公式：EER = 135.3 - 30.8*age + PA * (10.0*weight + 934*heightM) + growthAddition
-                const bodyFactor = (10.0 * weight) + (934 * heightM);
-                eer = 135.3 - (30.8 * age) + (pa * bodyFactor) + growthAddition;
+                if (gender === 'boy') {
+                    if (activity === 'sedentary') pa = 1.00;
+                    else if (activity === 'low') pa = 1.13;
+                    else if (activity === 'active') pa = 1.26;
+                    else if (activity === 'very') pa = 1.42;
+
+                    const bodyFactor = (26.7 * weight) + (903 * heightM);
+                    eer = 88.5 - (61.9 * age) + (pa * bodyFactor) + growthAddition;
+                } else {
+                    if (activity === 'sedentary') pa = 1.00;
+                    else if (activity === 'low') pa = 1.16;
+                    else if (activity === 'active') pa = 1.31;
+                    else if (activity === 'very') pa = 1.56;
+
+                    const bodyFactor = (10.0 * weight) + (934 * heightM);
+                    eer = 135.3 - (30.8 * age) + (pa * bodyFactor) + growthAddition;
+                }
             }
 
-            // 6. 顯示結果 (四捨五入至整數)
+            // 顯示結果
             document.getElementById('resultValue').innerText = Math.round(eer).toLocaleString();
             
-            // 產生摘要讓使用者確認判定無誤
             const genderText = gender === 'boy' ? '男孩' : '女孩';
-            document.getElementById('formulaDetail').innerHTML = `
-                對象：${age} 歲 ${genderText} <br>
-                套用 PA 係數：${pa} <br>
-                生長附加熱量：+${growthAddition} kcal
-            `;
+            let detailHtml = `對象：${age} 歲 ${genderText} <br> 套用模組：<span class="text-indigo-600 font-bold">${formulaType}</span> <br> 採用 PA 係數：${pa}`;
+            
+            if (!isObese) {
+                detailHtml += ` <br> 生長附加熱量：+${growthAddition} kcal`;
+            }
 
-            // 展開結果區塊
+            document.getElementById('formulaDetail').innerHTML = detailHtml;
             resultCard.classList.remove('hidden');
         }
 
-        // 顯示錯誤訊息的輔助函數
         function showError(msg) {
             const errorDiv = document.getElementById('errorMsg');
             errorDiv.innerText = msg;
