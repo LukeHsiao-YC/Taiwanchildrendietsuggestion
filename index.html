@@ -1,7 +1,27 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-     <!-- 回到健康大廳按鈕 (移到 body 內) -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>兒童健康與飲食評估工具</title>
+    <!-- 引入 Tailwind CSS 以進行快速、美觀的排版 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 隱藏捲軸但保留滾動功能 (針對部分美化需求) */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* 自定義一些過渡動畫讓操作更滑順 */
+        .transition-all { transition-property: all; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 300ms; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col items-center py-10 px-4 font-sans space-y-8">
+
+    <!-- 回到大廳按鈕 -->
     <a href="https://lukehsiao-yc.github.io/for_healthy_children/" 
        style="position: fixed; 
               top: 20px; 
@@ -17,28 +37,15 @@
               display: flex; 
               align-items: center; 
               font-family: 'Noto Sans TC', sans-serif;
-              transition: transform 0.2s;">
+              transition: transform 0.2s;"
+       onmouseover="this.style.transform='scale(1.05)'"
+       onmouseout="this.style.transform='scale(1)'">
        <span style="margin-right: 6px; font-size: 18px;">🏠</span> 回到大廳
     </a>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>台灣兒童每日飲食建議量查詢</title>
-    <!-- 引入 Tailwind CSS 以進行快速、美觀的排版 -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* 隱藏捲軸但保留滾動功能 (針對部分美化需求) */
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-    </style>
-</head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex items-center justify-center p-4 font-sans">
 
-    <!-- 主卡片容器 -->
+    <!-- ========================================== -->
+    <!-- 卡片 1：台灣兒童每日飲食建議量查詢 -->
+    <!-- ========================================== -->
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-100">
         
         <!-- 頂部標題區塊 -->
@@ -112,9 +119,97 @@
         </div>
     </div>
 
-    <!-- JavaScript 邏輯 -->
+
+    <!-- ========================================== -->
+    <!-- 卡片 2：兒童及青少年每日熱量需求 (EER) 計算機 -->
+    <!-- ========================================== -->
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-100">
+        
+        <!-- 頂部標題區塊 -->
+        <div class="bg-indigo-600 p-6 text-white text-center">
+            <h2 class="text-2xl font-bold mb-2">⚡ 兒童/青少年熱量需求 (EER) 計算機</h2>
+            <p class="text-indigo-200 text-xs">根據美國國家醫學院 (IOM) DRI 指引開發</p>
+        </div>
+
+        <div class="p-6 space-y-5">
+            <form id="eerForm" class="space-y-5" onsubmit="event.preventDefault(); calculateEER();">
+                
+                <!-- 性別選擇 (避免與上方表單衝突，改名為 eer_gender) -->
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">性別</label>
+                    <div class="flex gap-4">
+                        <label class="flex-1 cursor-pointer">
+                            <input type="radio" name="eer_gender" value="boy" class="peer sr-only" checked>
+                            <div class="rounded-lg border border-slate-200 px-4 py-3 text-center hover:bg-slate-50 peer-checked:border-indigo-500 peer-checked:bg-indigo-50 peer-checked:text-indigo-700 transition-all font-medium">
+                                👦 男孩
+                            </div>
+                        </label>
+                        <label class="flex-1 cursor-pointer">
+                            <input type="radio" name="eer_gender" value="girl" class="peer sr-only">
+                            <div class="rounded-lg border border-slate-200 px-4 py-3 text-center hover:bg-slate-50 peer-checked:border-pink-500 peer-checked:bg-pink-50 peer-checked:text-pink-700 transition-all font-medium">
+                                👧 女孩
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 數值輸入區 (Grid) -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="eer_age" class="block text-sm font-semibold text-slate-700 mb-1">年齡 (歲)</label>
+                        <input type="number" id="eer_age" min="3" max="18" step="0.1" placeholder="3 - 18" class="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" required>
+                    </div>
+                    <div>
+                        <label for="eer_weight" class="block text-sm font-semibold text-slate-700 mb-1">體重 (公斤)</label>
+                        <input type="number" id="eer_weight" min="5" max="150" step="0.1" placeholder="kg" class="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" required>
+                    </div>
+                    <div class="col-span-2">
+                        <label for="eer_height" class="block text-sm font-semibold text-slate-700 mb-1">身高 (公分)</label>
+                        <input type="number" id="eer_height" min="50" max="220" step="0.1" placeholder="cm (系統會自動轉為公尺)" class="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" required>
+                    </div>
+                </div>
+
+                <!-- 活動量選擇 -->
+                <div>
+                    <label for="eer_activity" class="block text-sm font-semibold text-slate-700 mb-1">日常活動強度</label>
+                    <select id="eer_activity" class="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white" required>
+                        <option value="" disabled selected>請選擇活動強度...</option>
+                        <option value="sedentary">久坐不動 (僅基本日常活動)</option>
+                        <option value="low">低度活動 (日常 + 相當於步行 30-60 分)</option>
+                        <option value="active">中度活動 (日常 + 相當於步行 60 分以上)</option>
+                        <option value="very">高度活動 (日常 + 60分中度 + 劇烈運動)</option>
+                    </select>
+                </div>
+
+                <!-- 錯誤訊息提示區 -->
+                <div id="errorMsg" class="hidden text-red-600 text-sm font-medium bg-red-50 p-3 rounded-lg"></div>
+
+                <!-- 計算按鈕 -->
+                <button type="submit" class="w-full bg-slate-800 text-white font-bold rounded-lg px-4 py-3 hover:bg-slate-700 transition-all shadow-md active:transform active:scale-95">
+                    🧮 計算每日總熱量需求
+                </button>
+            </form>
+
+            <!-- 結果顯示區 -->
+            <div id="resultCard" class="hidden mt-8 p-6 bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl border border-indigo-100 shadow-sm transition-all">
+                <h3 class="text-sm font-bold text-slate-600 mb-1 text-center">估計能量需求 (EER)</h3>
+                <div class="flex justify-center items-end gap-2 text-indigo-900">
+                    <span id="resultValue" class="text-4xl font-extrabold leading-none"></span>
+                    <span class="text-lg font-semibold mb-1">kcal / day</span>
+                </div>
+                <div class="mt-4 text-xs text-slate-500 border-t border-indigo-200 pt-3">
+                    <strong>系統判定摘要：</strong><br>
+                    <span id="formulaDetail"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript 邏輯 (包含兩個工具的程式碼) -->
     <script>
-        // 將 Python 中的字典格式轉換為 JavaScript 物件
+        /* ========================================================= */
+        /* 工具 1：飲食建議量查詢邏輯                                */
+        /* ========================================================= */
         const rawData = {
             "年齡": [
                 "1-3", "1-3", "1-3", "1-3", "4-6", "4-6", "4-6", "4-6",
@@ -134,7 +229,6 @@
             "油脂與堅果種子類 (份)": [4, 4, 4, 4, 4, 5, 4, 4, 5, 6, 5, 5, 6, 6, 5, 6, 7, 8, 6, 6, 7, 8, 5, 6]
         };
 
-        // 模擬 Pandas DataFrame，將直欄資料轉為橫列陣列以便於搜尋
         const dietDatabase = [];
         const rowCount = rawData["年齡"].length;
         
@@ -146,7 +240,6 @@
             dietDatabase.push(row);
         }
 
-        // 搭配一些小圖示讓結果更生動
         const icons = {
             "全榖雜糧類 (碗)": "🍚",
             "豆魚蛋肉類 (份)": "🥚",
@@ -157,41 +250,34 @@
         };
 
         function queryDiet() {
-            // 取得使用者輸入的值
             const ageGroup = document.getElementById("age").value;
             const gender = document.querySelector('input[name="gender"]:checked').value;
             const activityLevel = document.getElementById("activity").value;
 
-            // 在資料庫中尋找相符的紀錄 (模擬 Pandas 條件過濾)
             const result = dietDatabase.find(
                 item => item["年齡"] === ageGroup && 
                         item["性別"] === gender && 
                         item["活動強度"] === activityLevel
             );
 
-            // 準備更新介面
             const container = document.getElementById("result-container");
             const errorMessage = document.getElementById("error-message");
             const resultList = document.getElementById("result-list");
             const caloriesDisplay = document.getElementById("result-calories");
 
-            container.classList.remove("hidden"); // 顯示結果區塊
-            resultList.innerHTML = ""; // 清空之前的結果
+            container.classList.remove("hidden"); 
+            resultList.innerHTML = ""; 
 
             if (!result) {
-                // 找不到資料
                 errorMessage.classList.remove("hidden");
                 resultList.classList.add("hidden");
                 caloriesDisplay.textContent = "";
             } else {
-                // 找到資料
                 errorMessage.classList.add("hidden");
                 resultList.classList.remove("hidden");
                 
-                // 獨立顯示熱量
                 caloriesDisplay.textContent = `${result["熱量 (大卡)"]} 大卡`;
 
-                // 產生清單項目 (排除前四個用來搜尋/總結的屬性)
                 const skipKeys = ["年齡", "性別", "活動強度", "熱量 (大卡)"];
                 
                 for (const [key, value] of Object.entries(result)) {
@@ -210,7 +296,96 @@
                 }
             }
         }
+
+        /* ========================================================= */
+        /* 工具 2：EER 熱量計算機邏輯                                */
+        /* ========================================================= */
+        function calculateEER() {
+            // 1. 取得表單數值 (使用更新後的 ID)
+            const genderElement = document.querySelector('input[name="eer_gender"]:checked');
+            const ageInput = document.getElementById('eer_age').value;
+            const heightCmInput = document.getElementById('eer_height').value;
+            const weightInput = document.getElementById('eer_weight').value;
+            const activityInput = document.getElementById('eer_activity').value;
+            
+            const errorDiv = document.getElementById('errorMsg');
+            const resultCard = document.getElementById('resultCard');
+
+            // 隱藏之前的錯誤或結果
+            errorDiv.classList.add('hidden');
+            resultCard.classList.add('hidden');
+
+            // 2. 基礎防呆驗證
+            if (!genderElement || !ageInput || !heightCmInput || !weightInput || !activityInput) {
+                showError("請完整填寫所有欄位與活動強度。");
+                return;
+            }
+
+            const gender = genderElement.value;
+            const age = parseFloat(ageInput);
+            const heightCm = parseFloat(heightCmInput);
+            const weight = parseFloat(weightInput);
+            const activity = activityInput;
+
+            if (age < 3 || age > 18) {
+                showError("此公式僅適用於 3 至 18 歲的兒童與青少年，請重新確認年齡。");
+                return;
+            }
+
+            // 3. 單位轉換 (將公分轉為公尺)
+            const heightM = heightCm / 100;
+
+            // 4. 判斷生長熱量 (9歲以上為 +25，未滿9歲為 +20)
+            const growthAddition = (age >= 9) ? 25 : 20;
+
+            let pa = 1.0;
+            let eer = 0;
+
+            // 5. 核心公式運算 (依照 IOM 指引)
+            if (gender === 'boy') {
+                // 男孩 PA 係數判定
+                if (activity === 'sedentary') pa = 1.00;
+                else if (activity === 'low') pa = 1.13;
+                else if (activity === 'active') pa = 1.26;
+                else if (activity === 'very') pa = 1.42;
+
+                // 男孩公式：EER = 88.5 - 61.9*age + PA * (26.7*weight + 903*heightM) + growthAddition
+                const bodyFactor = (26.7 * weight) + (903 * heightM);
+                eer = 88.5 - (61.9 * age) + (pa * bodyFactor) + growthAddition;
+
+            } else {
+                // 女孩 PA 係數判定
+                if (activity === 'sedentary') pa = 1.00;
+                else if (activity === 'low') pa = 1.16;
+                else if (activity === 'active') pa = 1.31;
+                else if (activity === 'very') pa = 1.56;
+
+                // 女孩公式：EER = 135.3 - 30.8*age + PA * (10.0*weight + 934*heightM) + growthAddition
+                const bodyFactor = (10.0 * weight) + (934 * heightM);
+                eer = 135.3 - (30.8 * age) + (pa * bodyFactor) + growthAddition;
+            }
+
+            // 6. 顯示結果 (四捨五入至整數)
+            document.getElementById('resultValue').innerText = Math.round(eer).toLocaleString();
+            
+            // 產生摘要讓使用者確認判定無誤
+            const genderText = gender === 'boy' ? '男孩' : '女孩';
+            document.getElementById('formulaDetail').innerHTML = `
+                對象：${age} 歲 ${genderText} <br>
+                套用 PA 係數：${pa} <br>
+                生長附加熱量：+${growthAddition} kcal
+            `;
+
+            // 展開結果區塊
+            resultCard.classList.remove('hidden');
+        }
+
+        // 顯示錯誤訊息的輔助函數
+        function showError(msg) {
+            const errorDiv = document.getElementById('errorMsg');
+            errorDiv.innerText = msg;
+            errorDiv.classList.remove('hidden');
+        }
     </script>
 </body>
-
 </html>
